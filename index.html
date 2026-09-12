@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#D72638">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>GYM APP</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- ================= HEADER ================= -->
+
+    <header class="header">
+
+        <div class="logo">
+            <span class="logo-icon">GYM</span>
+            <span class="logo-text">APP</span>
+        </div>
+
+        <nav class="nav">
+
+            <button class="nav-btn active" onclick="showPage('dashboard', this)">
+                <span>⌂</span>
+                Início
+            </button>
+
+            <button class="nav-btn" onclick="showPage('workouts', this)">
+                <span>🏋</span>
+                Treinos
+            </button>
+
+            <button class="nav-btn" onclick="showPage('history', this)">
+                <span>▣</span>
+                Histórico
+            </button>
+
+            <button class="nav-btn" onclick="showPage('profile', this)">
+                <span>●</span>
+                Perfil
+            </button>
+
+        </nav>
+
+        <div class="header-level">
+            <span>NÍVEL</span>
+            <strong id="headerLevel">1</strong>
+        </div>
+
+    </header>
+
+
+    <!-- ================= MAIN ================= -->
+
+    <main class="main">
+
+        <!-- ================= DASHBOARD ================= -->
+
+        <section id="dashboard" class="page active">
+
+            <div class="page-title">
+
+                <div>
+                    <span class="section-label">PAINEL</span>
+                    <h1>Olá, <span id="dashboardName">Atleta</span> 👊</h1>
+                    <p>Pronto para treinar?</p>
+                </div>
+
+                <button class="primary-btn" onclick="showPage('workouts')">
+                    + NOVO TREINO
+                </button>
+
+            </div>
+
+
+            <!-- STATS -->
+
+            <div class="stats-grid">
+
+                <div class="stat-card">
+                    <span class="stat-icon">🔥</span>
+                    <div>
+                        <span class="stat-label">SEQUÊNCIA</span>
+                        <strong id="streakValue">0</strong>
+                        <small>dias</small>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <span class="stat-icon">⭐</span>
+                    <div>
+                        <span class="stat-label">XP TOTAL</span>
+                        <strong id="xpValue">0</strong>
+                        <small>XP</small>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <span class="stat-icon">🏋</span>
+                    <div>
+                        <span class="stat-label">TREINOS</span>
+                        <strong id="workoutCount">0</strong>
+                        <small>concluídos</small>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <span class="stat-icon">🏆</span>
+                    <div>
+                        <span class="stat-label">RECORDE</span>
+                        <strong id="recordValue">0</strong>
+                        <small>kg</small>
+                    </div>
+                </div>
+
+            </div>
+
+
+            <!-- XP -->
+
+            <div class="card xp-card">
+
+                <div class="xp-header">
+
+                    <div>
+                        <span class="section-label">PROGRESSO</span>
+                        <h2>Nível <span id="xpLevel">1</span></h2>
+                    </div>
+
+                    <strong>
+                        <span id="currentXP">0</span> /
+                        <span id="nextXP">100</span> XP
+                    </strong>
+
+                </div>
+
+                <div class="xp-bar">
+                    <div id="xpProgress"></div>
+                </div>
+
+                <p id="xpMessage">
+                    Continue treinando para subir de nível.
+                </p>
+
+            </div>
+
+
+            <!-- LAST WORKOUT -->
+
+            <div class="section-heading">
+
+                <div>
+                    <span class="section-label">RECENTE</span>
+                    <h2>Último treino</h2>
+                </div>
+
+                <button class="text-btn" onclick="showPage('history')">
+                    VER HISTÓRICO →
+                </button>
+
+            </div>
+
+            <div id="lastWorkout" class="last-workout"></div>
+
+        </section>
+
+
+        <!-- ================= WORKOUTS ================= -->
+
+        <section id="workouts" class="page">
+
+            <div class="page-title">
+
+                <div>
+                    <span class="section-label">TREINAMENTO</span>
+                    <h1>Meus treinos</h1>
+                    <p>Crie, personalize e acompanhe seus treinos.</p>
+                </div>
+
+                <button class="primary-btn" onclick="openWorkoutModal()">
+                    + CRIAR TREINO
+                </button>
+
+            </div>
+
+            <div id="workoutList" class="workout-grid"></div>
+
+        </section>
+
+
+        <!-- ================= HISTORY ================= -->
+
+        <section id="history" class="page">
+
+            <div class="page-title">
+
+                <div>
+                    <span class="section-label">REGISTRO</span>
+                    <h1>Histórico</h1>
+                    <p>Veja tudo que você já conquistou.</p>
+                </div>
+
+            </div>
+
+            <div id="historyList" class="history-list"></div>
+
+        </section>
+
+
+        <!-- ================= PROFILE ================= -->
+
+        <section id="profile" class="page">
+
+            <div class="page-title">
+
+                <div>
+                    <span class="section-label">MINHA CONTA</span>
+                    <h1>Perfil</h1>
+                    <p>Personalize suas informações.</p>
+                </div>
+
+            </div>
+
+
+            <div class="profile-grid">
+
+                <div class="card profile-card">
+
+                    <div class="profile-avatar" id="profileAvatar">
+                        A
+                    </div>
+
+                    <span class="section-label">ATLETA</span>
+
+                    <h2 id="profileName">
+                        Atleta
+                    </h2>
+
+                    <p>
+                        Nível <strong id="profileLevel">1</strong>
+                    </p>
+
+                </div>
+
+
+                <div class="card profile-form">
+
+                    <div class="form-group">
+
+                        <label for="profileNameInput">
+                            NOME
+                        </label>
+
+                        <input
+                            type="text"
+                            id="profileNameInput"
+                            placeholder="Seu nome"
+                        >
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label for="profileAgeInput">
+                            IDADE
+                        </label>
+
+                        <input
+                            type="number"
+                            id="profileAgeInput"
+                            min="10"
+                            max="100"
+                            placeholder="Sua idade"
+                        >
+
+                    </div>
+
+
+                    <button
+                        class="primary-btn full-btn"
+                        onclick="saveProfile()"
+                    >
+                        SALVAR ALTERAÇÕES
+                    </button>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- ================= CREATE WORKOUT MODAL ================= -->
+
+    <div id="workoutModal" class="modal">
+
+        <div class="modal-content large-modal">
+
+            <div class="modal-header">
+
+                <div>
+                    <span class="section-label">NOVO TREINO</span>
+                    <h2 id="workoutModalTitle">
+                        CRIAR TREINO
+                    </h2>
+                </div>
+
+                <button class="close-btn" onclick="closeWorkoutModal()">
+                    ×
+                </button>
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="workoutName">
+                    NOME DO TREINO
+                </label>
+
+                <input
+                    type="text"
+                    id="workoutName"
+                    placeholder="Ex: Push A, Upper, Peito e Tríceps..."
+                >
+
+            </div>
+
+
+            <div class="selector-header">
+
+                <div>
+                    <span class="section-label">EXERCÍCIOS</span>
+                    <h3>Escolha os exercícios</h3>
+                </div>
+
+                <span id="selectedExerciseCount">
+                    0 selecionados
+                </span>
+
+            </div>
+
+
+            <div
+                id="workoutExerciseSelector"
+                class="exercise-selector-grid"
+            ></div>
+
+
+            <!-- CUSTOM EXERCISE -->
+
+            <div class="custom-exercise-box">
+
+                <button
+                    class="secondary-btn"
+                    onclick="toggleCustomExercise()"
+                >
+                    + CRIAR EXERCÍCIO PERSONALIZADO
+                </button>
+
+
+                <div
+                    id="customExerciseForm"
+                    class="custom-exercise-form hidden"
+                >
+
+                    <div class="form-group">
+
+                        <label for="customExerciseName">
+                            NOME
+                        </label>
+
+                        <input
+                            type="text"
+                            id="customExerciseName"
+                            placeholder="Ex: Supino máquina"
+                        >
+
+                    </div>
+
+
+                    <div class="form-row">
+
+                        <div class="form-group">
+
+                            <label for="customExerciseMuscle">
+                                MÚSCULO
+                            </label>
+
+                            <select id="customExerciseMuscle">
+
+                                <option value="Peito">Peito</option>
+                                <option value="Costas">Costas</option>
+                                <option value="Ombros">Ombros</option>
+                                <option value="Bíceps">Bíceps</option>
+                                <option value="Tríceps">Tríceps</option>
+                                <option value="Quadríceps">Quadríceps</option>
+                                <option value="Posterior">Posterior</option>
+                                <option value="Glúteos">Glúteos</option>
+                                <option value="Panturrilha">Panturrilha</option>
+                                <option value="Abdômen">Abdômen</option>
+
+                            </select>
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="customExerciseFocus">
+                                FOCO
+                            </label>
+
+                            <input
+                                type="text"
+                                id="customExerciseFocus"
+                                placeholder="Ex: Peitoral"
+                            >
+
+                        </div>
+
+                    </div>
+
+
+                    <button
+                        class="primary-btn"
+                        onclick="addCustomExercise()"
+                    >
+                        ADICIONAR EXERCÍCIO
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <div class="modal-actions">
+
+                <button
+                    class="secondary-btn"
+                    onclick="closeWorkoutModal()"
+                >
+                    CANCELAR
+                </button>
+
+                <button
+                    class="primary-btn"
+                    onclick="saveWorkout()"
+                >
+                    SALVAR TREINO
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ================= TRAINING MODAL ================= -->
+
+    <div id="trainingModal" class="modal">
+
+        <div class="modal-content training-modal">
+
+            <div class="modal-header">
+
+                <div>
+                    <span class="section-label">TREINO ATIVO</span>
+                    <h2 id="trainingTitle">
+                        TREINO
+                    </h2>
+                </div>
+
+                <button class="close-btn" onclick="closeTrainingModal()">
+                    ×
+                </button>
+
+            </div>
+
+
+            <div class="training-info">
+
+                <div>
+                    <span>EXERCÍCIOS</span>
+                    <strong id="trainingExerciseCount">
+                        0
+                    </strong>
+                </div>
+
+                <div>
+                    <span>VOLUME</span>
+                    <strong>
+                        <span id="trainingVolume">0</span> kg
+                    </strong>
+                </div>
+
+            </div>
+
+
+            <div
+                id="trainingExercises"
+                class="training-exercises"
+            ></div>
+
+
+            <div class="modal-actions">
+
+                <button
+                    class="secondary-btn"
+                    onclick="closeTrainingModal()"
+                >
+                    SAIR
+                </button>
+
+                <button
+                    class="primary-btn"
+                    onclick="finishWorkout()"
+                >
+                    FINALIZAR TREINO
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ================= TOAST ================= -->
+
+    <div id="appToast" class="toast"></div>
+
+
+    <!-- ================= CONFIRM MODAL ================= -->
+
+    <div id="confirmModal" class="modal confirm-modal">
+
+        <div class="modal-content confirm-content">
+
+            <div class="modal-header">
+
+                <div>
+                    <span class="section-label">
+                        CONFIRMAR
+                    </span>
+
+                    <h2>
+                        CONFIRMAR AÇÃO
+                    </h2>
+                </div>
+
+                <button
+                    class="close-btn"
+                    onclick="closeConfirm()"
+                >
+                    ×
+                </button>
+
+            </div>
+
+            <p
+                id="confirmMessage"
+                class="confirm-message"
+            ></p>
+
+            <div class="confirm-actions">
+
+                <button
+                    id="confirmCancel"
+                    class="secondary-btn"
+                    onclick="closeConfirm()"
+                >
+                    CANCELAR
+                </button>
+
+                <button
+                    id="confirmOk"
+                    class="danger-btn"
+                >
+                    CONFIRMAR
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ================= REGISTRATION ================= -->
+
+    <div id="registrationModal" class="modal">
+
+        <div class="modal-content registration-content">
+
+            <div class="registration-logo">
+                GYM
+            </div>
+
+            <span class="section-label">
+                PRIMEIRO ACESSO
+            </span>
+
+            <h2>
+                Vamos começar?
+            </h2>
+
+            <p>
+                Crie seu perfil para começar a acompanhar seus treinos.
+            </p>
+
+
+            <div class="form-group">
+
+                <label for="registrationName">
+                    SEU NOME
+                </label>
+
+                <input
+                    type="text"
+                    id="registrationName"
+                    placeholder="Digite seu nome"
+                >
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="registrationAge">
+                    SUA IDADE
+                </label>
+
+                <input
+                    type="number"
+                    id="registrationAge"
+                    min="10"
+                    max="100"
+                    placeholder="Digite sua idade"
+                >
+
+            </div>
+
+
+            <button
+                class="primary-btn full-btn"
+                onclick="finishRegistration()"
+            >
+                COMEÇAR
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <script src="script.js"></script>
+
+</body>
+</html>

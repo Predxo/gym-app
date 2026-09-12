@@ -1,0 +1,11 @@
+{
+  "name": "GYM APP",
+  "short_name": "GYM APP",
+  "description": "Seu aplicativo pessoal de academia",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0d0d12",
+  "theme_color": "#D72638",
+  "orientation": "portrait",
+  "icons": []
+}
