@@ -1,11 +1,15 @@
-const CACHE_NAME = "gym-app-v1";
+const CACHE_NAME = "gym-app-v2";
+
+const CACHE_NAME = "gym-app-v2";
 
 const FILES_TO_CACHE = [
     "./",
     "./index.html",
     "./style.css",
     "./script.js",
-    "./manifest.json"
+    "./manifest.json",
+    "./icon-192.png",
+    "./icon-512.png"
 ];
 
 self.addEventListener("install", event => {
