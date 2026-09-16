@@ -82,6 +82,22 @@
 
             </div>
 
+            <!-- ================= TODAY'S WORKOUT ================= -->
+
+            <div class="today-workout-section">
+
+                <div class="section-heading">
+
+                    <div>
+                        <span class="section-label">PROGRAMAÇÃO</span>
+                        <h2>Treino indicado de hoje</h2>
+                    </div>
+
+            </div>
+
+    <div id="todayWorkoutList" class="today-workout-list"></div>
+
+</div>
 
             <!-- STATS -->
 
@@ -336,6 +352,110 @@
                     id="workoutName"
                     placeholder="Ex: Push A, Upper, Peito e Tríceps..."
                 >
+
+            </div>
+
+            <!-- ================= WORKOUT DAYS ================= -->
+
+            <div class="workout-days-box">
+
+                <div class="selector-header">
+
+                    <div>
+                        <span class="section-label">PROGRAMAÇÃO</span>
+                        <h3>Dias do treino</h3>
+                    </div>
+
+                    <span id="selectedDayCount">
+                        0 dias
+                    </span>
+
+                </div>
+
+
+                <div class="weekday-selector">
+
+                    <label class="weekday-option">
+                        <input
+                            type="checkbox"
+                            name="workoutDay"
+                            value="1"
+                            onchange="updateSelectedDayCount()"
+                        >
+                        <span>SEG</span>
+                    </label>
+
+
+                    <label class="weekday-option">
+                        <input
+                            type="checkbox"
+                            name="workoutDay"
+                            value="2"
+                            onchange="updateSelectedDayCount()"
+                        >
+                        <span>TER</span>
+                    </label>
+
+
+                    <label class="weekday-option">
+                        <input
+                            type="checkbox"
+                            name="workoutDay"
+                            value="3"
+                            onchange="updateSelectedDayCount()"
+                        >
+                        <span>QUA</span>
+                    </label>
+
+
+                    <label class="weekday-option">
+                        <input
+                            type="checkbox"
+                            name="workoutDay"
+                            value="4"
+                            onchange="updateSelectedDayCount()"
+                        >
+                        <span>QUI</span>
+                    </label>
+
+
+                    <label class="weekday-option">
+                        <input
+                            type="checkbox"
+                            name="workoutDay"
+                            value="5"
+                            onchange="updateSelectedDayCount()"
+                        >
+                        <span>SEX</span>
+                    </label>
+
+
+                    <label class="weekday-option">
+                        <input
+                            type="checkbox"
+                            name="workoutDay"
+                            value="6"
+                            onchange="updateSelectedDayCount()"
+                        >
+                        <span>SÁB</span>
+                    </label>
+
+
+                    <label class="weekday-option">
+                        <input
+                            type="checkbox"
+                            name="workoutDay"
+                            value="0"
+                            onchange="updateSelectedDayCount()"
+                        >
+                        <span>DOM</span>
+                    </label>
+
+                </div>
+
+                <p class="workout-days-help">
+                    Escolha os dias em que este treino deve aparecer como indicado.
+                </p>
 
             </div>
 

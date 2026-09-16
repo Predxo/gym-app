@@ -1,5 +1,5 @@
 /* =========================================================
-   GYM APP V2
+   GYM APP V3
    ========================================================= */
 
 
@@ -253,6 +253,7 @@ const exercises = [
 /* ================= APP DATA ================= */
 
 let data = {
+
     user: {
         name: "",
         age: null
@@ -267,15 +268,42 @@ let data = {
     records: {
         maxWeight: 0
     }
+
 };
 
 
 /* ================= STATE ================= */
 
 let editingWorkoutId = null;
+
 let activeWorkout = null;
 
 let confirmCallback = null;
+
+
+/* ================= CONSTANTS ================= */
+
+const STORAGE_KEY_V2 = "gymAppV2";
+
+const STORAGE_KEY_V3 = "gymAppV3";
+
+const MIN_SETS = 1;
+
+const MAX_SETS = 4;
+
+const DEFAULT_SETS = 3;
+
+const MAX_REPS = 15;
+
+const WEEKDAYS = [
+    "DOM",
+    "SEG",
+    "TER",
+    "QUA",
+    "QUI",
+    "SEX",
+    "SÁB"
+];
 
 
 /* ================= INITIALIZATION ================= */
@@ -300,25 +328,192 @@ document.addEventListener("DOMContentLoaded", () => {
 function saveData() {
 
     localStorage.setItem(
-        "gymAppV2",
+        STORAGE_KEY_V3,
         JSON.stringify(data)
     );
 
 }
 
 
+/* ================= DATA MIGRATION ================= */
+
+function migrateWorkout(workout) {
+
+    if (
+        !workout ||
+        !Array.isArray(workout.exercises)
+    ) {
+
+        return workout;
+
+    }
+
+
+    let days =
+        Array.isArray(workout.days)
+            ? workout.days
+            : [];
+
+
+    workout.days =
+        days
+            .map(Number)
+            .filter(
+                day =>
+                    day >= 0 &&
+                    day <= 6
+            );
+
+
+    workout.exercises =
+        workout.exercises.map(
+            exercise => {
+
+                let sets =
+                    Number(
+                        exercise.sets
+                    );
+
+
+                if (
+                    !sets ||
+                    sets < MIN_SETS ||
+                    sets > MAX_SETS
+                ) {
+
+                    sets =
+                        DEFAULT_SETS;
+
+                }
+
+
+                return {
+
+                    ...exercise,
+
+                    sets
+
+                };
+
+            }
+        );
+
+
+    return workout;
+
+}
+
+
+function migrateHistoryItem(item) {
+
+    if (!item || !Array.isArray(item.exercises)) {
+        return item;
+    }
+
+
+    item.exercises =
+        item.exercises.map(exercise => {
+
+            if (Array.isArray(exercise.sets)) {
+
+                return exercise;
+
+            }
+
+
+            return {
+                ...exercise,
+
+                sets: [
+                    {
+                        weight:
+                            Number(exercise.weight) || 0,
+
+                        reps:
+                            Number(exercise.reps) || 0
+                    }
+                ]
+            };
+
+        });
+
+
+    return item;
+
+}
+
+
+function normalizeData() {
+
+    data.workouts =
+        Array.isArray(data.workouts)
+            ? data.workouts.map(migrateWorkout)
+            : [];
+
+
+    data.history =
+        Array.isArray(data.history)
+            ? data.history.map(migrateHistoryItem)
+            : [];
+
+
+    if (!data.records) {
+
+        data.records = {
+            maxWeight: 0
+        };
+
+    }
+
+
+    if (
+        typeof data.records.maxWeight !== "number"
+    ) {
+
+        data.records.maxWeight =
+            Number(data.records.maxWeight) || 0;
+
+    }
+
+}
+
+
+/* ================= LOAD DATA ================= */
+
 function loadData() {
 
-    const saved = localStorage.getItem("gymAppV2");
+    let saved =
+        localStorage.getItem(STORAGE_KEY_V3);
 
-    if (!saved) return;
+
+    let usingOldVersion = false;
+
+
+    if (!saved) {
+
+        saved =
+            localStorage.getItem(STORAGE_KEY_V2);
+
+        usingOldVersion = Boolean(saved);
+
+    }
+
+
+    if (!saved) {
+        return;
+    }
+
 
     try {
 
-        const parsed = JSON.parse(saved);
+        const parsed =
+            JSON.parse(saved);
+
 
         data = {
+
             ...data,
+
             ...parsed,
 
             user: {
@@ -332,6 +527,20 @@ function loadData() {
             }
 
         };
+
+
+        normalizeData();
+
+
+        if (usingOldVersion) {
+
+            saveData();
+
+            console.log(
+                "GYM APP: dados da V2 migrados para V3."
+            );
+
+        }
 
     } catch (error) {
 
@@ -349,20 +558,26 @@ function loadData() {
 
 function showToast(message, type = "info") {
 
-    const toast = document.getElementById("appToast");
+    const toast =
+        document.getElementById("appToast");
+
 
     toast.textContent = message;
+
 
     toast.className =
         `toast ${type} show`;
 
+
     clearTimeout(window.toastTimeout);
 
-    window.toastTimeout = setTimeout(() => {
 
-        toast.classList.remove("show");
+    window.toastTimeout =
+        setTimeout(() => {
 
-    }, 3000);
+            toast.classList.remove("show");
+
+        }, 3000);
 
 }
 
@@ -374,23 +589,34 @@ function showConfirm(message, callback) {
     const modal =
         document.getElementById("confirmModal");
 
+
     const messageElement =
         document.getElementById("confirmMessage");
+
 
     const okButton =
         document.getElementById("confirmOk");
 
-    messageElement.textContent = message;
 
-    confirmCallback = callback;
+    messageElement.textContent =
+        message;
+
+
+    confirmCallback =
+        callback;
+
 
     modal.classList.add("show");
 
+
     okButton.onclick = () => {
 
-        const action = confirmCallback;
+        const action =
+            confirmCallback;
+
 
         closeConfirm();
+
 
         if (action) {
             action();
@@ -406,7 +632,9 @@ function closeConfirm() {
     const modal =
         document.getElementById("confirmModal");
 
+
     modal.classList.remove("show");
+
 
     confirmCallback = null;
 
@@ -417,22 +645,32 @@ function closeConfirm() {
 
 function showPage(pageId, clickedButton = null) {
 
-    document.querySelectorAll(".page")
+    document
+        .querySelectorAll(".page")
         .forEach(page => {
+
             page.classList.remove("active");
+
         });
+
 
     const page =
         document.getElementById(pageId);
 
+
     if (page) {
+
         page.classList.add("active");
+
     }
 
 
-    document.querySelectorAll(".nav-btn")
+    document
+        .querySelectorAll(".nav-btn")
         .forEach(button => {
+
             button.classList.remove("active");
+
         });
 
 
@@ -447,8 +685,11 @@ function showPage(pageId, clickedButton = null) {
                 `.nav-btn[onclick*="'${pageId}'"]`
             );
 
+
         if (matchingButton) {
+
             matchingButton.classList.add("active");
+
         }
 
     }
@@ -474,6 +715,7 @@ function finishRegistration() {
             .getElementById("registrationName")
             .value
             .trim();
+
 
     const age =
         Number(
@@ -507,11 +749,16 @@ function finishRegistration() {
     }
 
 
-    data.user.name = name;
-    data.user.age = age;
+    data.user.name =
+        name;
+
+
+    data.user.age =
+        age;
 
 
     saveData();
+
 
     document
         .getElementById("registrationModal")
@@ -519,6 +766,7 @@ function finishRegistration() {
 
 
     updateAll();
+
 
     showToast(
         `Bem-vindo, ${name}! 💪`,
@@ -535,14 +783,14 @@ function updateDashboard() {
     const level =
         calculateLevel(data.xp);
 
+
     const xpForCurrent =
         (level - 1) * 100;
 
-    const xpForNext =
-        level * 100;
 
     const currentLevelXP =
         data.xp - xpForCurrent;
+
 
     const progress =
         Math.min(
@@ -551,64 +799,85 @@ function updateDashboard() {
         );
 
 
-    document.getElementById("dashboardName")
+    document
+        .getElementById("dashboardName")
         .textContent =
         data.user.name || "Atleta";
 
 
-    document.getElementById("headerLevel")
-        .textContent = level;
+    document
+        .getElementById("headerLevel")
+        .textContent =
+        level;
 
 
-    document.getElementById("xpLevel")
-        .textContent = level;
+    document
+        .getElementById("xpLevel")
+        .textContent =
+        level;
 
 
-    document.getElementById("profileLevel")
-        .textContent = level;
+    document
+        .getElementById("profileLevel")
+        .textContent =
+        level;
 
 
-    document.getElementById("xpValue")
-        .textContent = data.xp;
+    document
+        .getElementById("xpValue")
+        .textContent =
+        data.xp;
 
 
-    document.getElementById("currentXP")
-        .textContent = currentLevelXP;
+    document
+        .getElementById("currentXP")
+        .textContent =
+        currentLevelXP;
 
 
-    document.getElementById("nextXP")
-        .textContent = 100;
+    document
+        .getElementById("nextXP")
+        .textContent =
+        100;
 
 
-    document.getElementById("xpProgress")
+    document
+        .getElementById("xpProgress")
         .style.width =
         `${progress}%`;
 
 
-    document.getElementById("workoutCount")
+    document
+        .getElementById("workoutCount")
         .textContent =
         data.history.length;
 
 
-    document.getElementById("recordValue")
+    document
+        .getElementById("recordValue")
         .textContent =
-        formatNumber(data.records.maxWeight);
+        formatNumber(
+            data.records.maxWeight
+        );
 
 
-    document.getElementById("streakValue")
+    document
+        .getElementById("streakValue")
         .textContent =
         calculateStreak();
 
 
     if (progress >= 100) {
 
-        document.getElementById("xpMessage")
+        document
+            .getElementById("xpMessage")
             .textContent =
             "🔥 Você subiu de nível!";
 
     } else {
 
-        document.getElementById("xpMessage")
+        document
+            .getElementById("xpMessage")
             .textContent =
             `${100 - currentLevelXP} XP para o próximo nível.`;
 
@@ -616,6 +885,120 @@ function updateDashboard() {
 
 
     renderLastWorkout();
+
+    renderTodayWorkouts();
+
+}
+
+function renderTodayWorkouts() {
+
+    const container =
+        document.getElementById(
+            "todayWorkoutList"
+        );
+
+
+    if (!container) return;
+
+
+    // 0 = Domingo
+    // 1 = Segunda
+    // 2 = Terça
+    // 3 = Quarta
+    // 4 = Quinta
+    // 5 = Sexta
+    // 6 = Sábado
+
+    const today =
+        new Date().getDay();
+
+
+    const todayWorkouts =
+        data.workouts.filter(
+            workout =>
+                Array.isArray(workout.days) &&
+                workout.days.includes(today)
+        );
+
+
+    // ================= NENHUM TREINO =================
+
+    if (!todayWorkouts.length) {
+
+        container.innerHTML = `
+
+            <div class="today-empty">
+
+                <div class="today-empty-icon">
+                    😴
+                </div>
+
+                <strong>
+                    Nenhum treino programado para hoje.
+                </strong>
+
+                <p>
+                    Você pode definir os dias na edição dos seus treinos.
+                </p>
+
+            </div>
+
+        `;
+
+        return;
+
+    }
+
+
+    // ================= TREINOS DE HOJE =================
+
+    container.innerHTML =
+        todayWorkouts
+            .map(workout => `
+
+                <div class="today-workout-card">
+
+                    <div class="today-workout-main">
+
+                        <div class="today-workout-icon">
+                            🏋️
+                        </div>
+
+                        <div class="today-workout-info">
+
+                            <span class="section-label">
+                                TREINO DE HOJE
+                            </span>
+
+                            <h3>
+                                ${workout.name}
+                            </h3>
+
+                            <p>
+                                ${workout.exercises.length}
+                                exercício${
+                                    workout.exercises.length === 1
+                                        ? ""
+                                        : "s"
+                                }
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <button
+                        class="primary-btn"
+                        onclick="startWorkout(${workout.id})"
+                    >
+                        INICIAR →
+                    </button>
+
+                </div>
+
+            `)
+            .join("");
 
 }
 
@@ -644,10 +1027,15 @@ function calculateStreak() {
     let streak = 1;
 
 
-    for (let i = 0; i < dates.length - 1; i++) {
+    for (
+        let i = 0;
+        i < dates.length - 1;
+        i++
+    ) {
 
         const current =
             new Date(dates[i]);
+
 
         const previous =
             new Date(dates[i + 1]);
@@ -709,26 +1097,32 @@ function renderWorkoutSelector(selectedIds = []) {
 
 
     container.innerHTML =
-        exercises.map(exercise => `
+        exercises
+            .map(exercise => `
 
-            <label class="exercise-selector">
+                <label class="exercise-selector">
 
-                <input
-                    type="checkbox"
-                    value="${exercise.id}"
-                    ${selectedSet.has(String(exercise.id))
-                        ? "checked"
-                        : ""}
-                    onchange="updateSelectedExerciseCount()"
-                >
+                    <input
+                        type="checkbox"
+                        value="${exercise.id}"
+                        ${
+                            selectedSet.has(
+                                String(exercise.id)
+                            )
+                                ? "checked"
+                                : ""
+                        }
+                        onchange="updateSelectedExerciseCount()"
+                    >
 
-                <span>
-                    ${exercise.name}
-                </span>
+                    <span>
+                        ${escapeHTML(exercise.name)}
+                    </span>
 
-            </label>
+                </label>
 
-        `).join("");
+            `)
+            .join("");
 
 
     updateSelectedExerciseCount();
@@ -755,7 +1149,11 @@ function updateSelectedExerciseCount() {
     if (counter) {
 
         counter.textContent =
-            `${selected.length} selecionado${selected.length === 1 ? "" : "s"}`;
+            `${selected.length} selecionado${
+                selected.length === 1
+                    ? ""
+                    : "s"
+            }`;
 
     }
 
@@ -763,10 +1161,10 @@ function updateSelectedExerciseCount() {
 
 
 /* ================= WORKOUT MODAL ================= */
-
 function openWorkoutModal(workoutId = null) {
 
-    editingWorkoutId = workoutId;
+    editingWorkoutId =
+        workoutId;
 
 
     const modal =
@@ -785,7 +1183,8 @@ function openWorkoutModal(workoutId = null) {
 
         const workout =
             data.workouts.find(
-                item => item.id === workoutId
+                item =>
+                    item.id === workoutId
             );
 
 
@@ -797,17 +1196,24 @@ function openWorkoutModal(workoutId = null) {
 
 
         document
-            .getElementById("workoutName")
+            .getElementById(
+                "workoutName"
+            )
             .value =
             workout.name;
 
 
         renderWorkoutSelector(
             workout.exercises.map(
-                exercise => exercise.id
+                exercise =>
+                    exercise.id
             )
         );
 
+
+        setSelectedWorkoutDays(
+            workout.days || []
+        );
 
     } else {
 
@@ -816,17 +1222,25 @@ function openWorkoutModal(workoutId = null) {
 
 
         document
-            .getElementById("workoutName")
-            .value = "";
+            .getElementById(
+                "workoutName"
+            )
+            .value =
+            "";
 
 
         renderWorkoutSelector([]);
+
+
+        setSelectedWorkoutDays([]);
 
     }
 
 
     document
-        .getElementById("customExerciseForm")
+        .getElementById(
+            "customExerciseForm"
+        )
         .classList.add("hidden");
 
 
@@ -834,14 +1248,15 @@ function openWorkoutModal(workoutId = null) {
 
 }
 
-
 function closeWorkoutModal() {
 
     document
         .getElementById("workoutModal")
         .classList.remove("show");
 
-    editingWorkoutId = null;
+
+    editingWorkoutId =
+        null;
 
 }
 
@@ -861,20 +1276,26 @@ function addCustomExercise() {
 
     const name =
         document
-            .getElementById("customExerciseName")
+            .getElementById(
+                "customExerciseName"
+            )
             .value
             .trim();
 
 
     const muscle =
         document
-            .getElementById("customExerciseMuscle")
+            .getElementById(
+                "customExerciseMuscle"
+            )
             .value;
 
 
     const focus =
         document
-            .getElementById("customExerciseFocus")
+            .getElementById(
+                "customExerciseFocus"
+            )
             .value
             .trim() ||
         muscle;
@@ -892,19 +1313,21 @@ function addCustomExercise() {
     }
 
 
-    /* Guarda os exercícios que já estavam marcados */
-
     const selectedIds =
         [
             ...document.querySelectorAll(
                 "#workoutExerciseSelector input:checked"
             )
-        ].map(input => input.value);
+        ].map(
+            input =>
+                input.value
+        );
 
 
     const newExercise = {
 
-        id: `custom-${Date.now()}`,
+        id:
+            `custom-${Date.now()}`,
 
         name,
 
@@ -917,10 +1340,10 @@ function addCustomExercise() {
     };
 
 
-    exercises.push(newExercise);
+    exercises.push(
+        newExercise
+    );
 
-
-    /* Re-renderiza sem perder os selecionados */
 
     renderWorkoutSelector([
         ...selectedIds,
@@ -929,17 +1352,25 @@ function addCustomExercise() {
 
 
     document
-        .getElementById("customExerciseName")
-        .value = "";
+        .getElementById(
+            "customExerciseName"
+        )
+        .value =
+        "";
 
 
     document
-        .getElementById("customExerciseFocus")
-        .value = "";
+        .getElementById(
+            "customExerciseFocus"
+        )
+        .value =
+        "";
 
 
     document
-        .getElementById("customExerciseForm")
+        .getElementById(
+            "customExerciseForm"
+        )
         .classList.add("hidden");
 
 
@@ -950,6 +1381,85 @@ function addCustomExercise() {
 
 }
 
+/* ================= WORKOUT DAYS ================= */
+
+function getSelectedWorkoutDays() {
+
+    return [
+        ...document.querySelectorAll(
+            'input[name="workoutDay"]:checked'
+        )
+    ].map(input => Number(input.value));
+
+}
+
+
+function setSelectedWorkoutDays(days = []) {
+
+    const selectedDays =
+        new Set(
+            days.map(Number)
+        );
+
+
+    document
+        .querySelectorAll(
+            'input[name="workoutDay"]'
+        )
+        .forEach(input => {
+
+            input.checked =
+                selectedDays.has(
+                    Number(input.value)
+                );
+
+        });
+
+
+    updateSelectedDayCount();
+
+}
+
+
+function updateSelectedDayCount() {
+
+    const selectedDays =
+        getSelectedWorkoutDays();
+
+
+    const counter =
+        document.getElementById(
+            "selectedDayCount"
+        );
+
+
+    if (!counter) return;
+
+
+    counter.textContent =
+        `${selectedDays.length} ${
+            selectedDays.length === 1
+                ? "dia"
+                : "dias"
+        }`;
+
+}
+
+
+function getTodayDay() {
+
+    return new Date().getDay();
+
+}
+
+
+function getTodayName() {
+
+    return WEEKDAYS[
+        getTodayDay()
+    ];
+
+}
 
 /* ================= SAVE WORKOUT ================= */
 
@@ -1009,11 +1519,24 @@ function saveWorkout() {
                 id: exercise.id,
                 name: exercise.name,
                 muscle: exercise.muscle,
-                focus: exercise.focus
+                focus: exercise.focus,
+
+                // Mantém o sistema de séries da V3
+                sets:
+                    exercise.sets ||
+                    DEFAULT_SETS
             };
 
         });
 
+
+    // ================= DIAS DA SEMANA =================
+
+    const selectedDays =
+        getSelectedWorkoutDays();
+
+
+    // ================= SALVAR =================
 
     if (editingWorkoutId) {
 
@@ -1026,10 +1549,14 @@ function saveWorkout() {
 
         if (workout) {
 
-            workout.name = name;
+            workout.name =
+                name;
 
             workout.exercises =
                 selectedExercises;
+
+            workout.days =
+                selectedDays;
 
         }
 
@@ -1043,11 +1570,16 @@ function saveWorkout() {
 
         const newWorkout = {
 
-            id: Date.now(),
+            id:
+                Date.now(),
 
             name,
 
-            exercises: selectedExercises,
+            exercises:
+                selectedExercises,
+
+            days:
+                selectedDays,
 
             createdAt:
                 new Date().toISOString()
@@ -1122,92 +1654,176 @@ function renderWorkouts() {
 
 
     container.innerHTML =
-        data.workouts.map(workout => `
+        data.workouts
+            .map(workout => {
 
-            <div class="workout-card">
+                const days =
+                    Array.isArray(workout.days)
+                        ? workout.days
+                        : [];
 
-                <div class="workout-card-header">
 
-                    <div>
+                return `
 
-                        <span class="section-label">
-                            TREINO
-                        </span>
+                    <div class="workout-card">
 
-                        <h3>
-                            ${escapeHTML(workout.name)}
-                        </h3>
+                        <div class="workout-card-header">
 
-                        <p>
-                            ${workout.exercises.length}
-                            exercício${workout.exercises.length === 1 ? "" : "s"}
-                        </p>
+                            <div>
+
+                                <span class="section-label">
+                                    TREINO
+                                </span>
+
+                                <h3>
+                                    ${escapeHTML(
+                                        workout.name
+                                    )}
+                                </h3>
+
+                                <p>
+                                    ${
+                                        workout.exercises.length
+                                    }
+                                    exercício${
+                                        workout.exercises.length === 1
+                                            ? ""
+                                            : "s"
+                                    }
+                                </p>
+
+                            </div>
+
+
+                            <div class="workout-menu">
+
+                                <button
+                                    class="icon-btn"
+                                    onclick="openWorkoutModal(${workout.id})"
+                                    title="Editar"
+                                >
+                                    ✎
+                                </button>
+
+                                <button
+                                    class="icon-btn delete"
+                                    onclick="deleteWorkout(${workout.id})"
+                                    title="Excluir"
+                                >
+                                    ×
+                                </button>
+
+                            </div>
+
+                        </div>
+
+
+                        ${
+                            days.length
+                                ? `
+
+                                    <div class="workout-schedule">
+
+                                        ${days
+                                            .sort(
+                                                (a, b) =>
+                                                    getDayOrder(a) -
+                                                    getDayOrder(b)
+                                            )
+                                            .map(
+                                                day => `
+                                                    <span>
+                                                        ${WEEKDAYS[day]}
+                                                    </span>
+                                                `
+                                            )
+                                            .join("")}
+
+                                    </div>
+
+                                `
+                                : ""
+                        }
+
+
+                        <div class="workout-exercises">
+
+                            ${
+                                workout.exercises
+                                    .slice(0, 8)
+                                    .map(
+                                        exercise => `
+
+                                            <span>
+                                                ${escapeHTML(
+                                                    exercise.name
+                                                )}
+                                                · ${
+                                                    normalizeSetCount(
+                                                        exercise.sets
+                                                    )
+                                                } séries
+                                            </span>
+
+                                        `
+                                    )
+                                    .join("")
+                            }
+
+
+                            ${
+                                workout.exercises.length > 8
+                                    ? `<span>
+                                        +${
+                                            workout.exercises.length -
+                                            8
+                                        }
+                                    </span>`
+                                    : ""
+                            }
+
+                        </div>
+
+
+                        <div class="workout-card-footer">
+
+                            <small>
+                                Criado em
+                                ${formatDate(
+                                    workout.createdAt
+                                )}
+                            </small>
+
+                            <button
+                                class="primary-btn"
+                                onclick="startWorkout(${workout.id})"
+                            >
+                                INICIAR →
+                            </button>
+
+                        </div>
 
                     </div>
 
+                `;
 
-                    <div class="workout-menu">
+            })
+            .join("");
 
-                        <button
-                            class="icon-btn"
-                            onclick="openWorkoutModal(${workout.id})"
-                            title="Editar"
-                        >
-                            ✎
-                        </button>
+}
 
-                        <button
-                            class="icon-btn delete"
-                            onclick="deleteWorkout(${workout.id})"
-                            title="Excluir"
-                        >
-                            ×
-                        </button>
+function getDayOrder(day) {
 
-                    </div>
+    /*
+       Segunda começa primeiro na interface.
+       Domingo fica por último.
+    */
 
-                </div>
+    if (day === 0) {
+        return 7;
+    }
 
-
-                <div class="workout-exercises">
-
-                    ${workout.exercises
-                        .slice(0, 8)
-                        .map(exercise => `
-                            <span>
-                                ${escapeHTML(exercise.name)}
-                            </span>
-                        `)
-                        .join("")}
-
-                    ${
-                        workout.exercises.length > 8
-                            ? `<span>+${workout.exercises.length - 8}</span>`
-                            : ""
-                    }
-
-                </div>
-
-
-                <div class="workout-card-footer">
-
-                    <small>
-                        Criado em
-                        ${formatDate(workout.createdAt)}
-                    </small>
-
-                    <button
-                        class="primary-btn"
-                        onclick="startWorkout(${workout.id})"
-                    >
-                        INICIAR →
-                    </button>
-
-                </div>
-
-            </div>
-
-        `).join("");
+    return day;
 
 }
 
@@ -1218,7 +1834,8 @@ function deleteWorkout(id) {
 
     const workout =
         data.workouts.find(
-            item => item.id === id
+            item =>
+                item.id === id
         );
 
 
@@ -1231,7 +1848,8 @@ function deleteWorkout(id) {
 
             data.workouts =
                 data.workouts.filter(
-                    item => item.id !== id
+                    item =>
+                        item.id !== id
                 );
 
 
@@ -1240,6 +1858,7 @@ function deleteWorkout(id) {
             renderWorkouts();
 
             updateDashboard();
+
 
             showToast(
                 "Treino excluído.",
@@ -1251,6 +1870,159 @@ function deleteWorkout(id) {
 
 }
 
+/* ================= TODAY'S WORKOUT ================= */
+
+function renderTodayWorkouts() {
+
+    const container =
+        document.getElementById(
+            "todayWorkoutList"
+        );
+
+
+    if (!container) return;
+
+
+    const today =
+        getTodayDay();
+
+
+    const todayWorkouts =
+        data.workouts.filter(
+            workout =>
+                Array.isArray(
+                    workout.days
+                ) &&
+                workout.days.includes(
+                    today
+                )
+        );
+
+
+    if (!todayWorkouts.length) {
+
+        container.innerHTML = `
+
+            <div class="today-empty">
+
+                <div class="today-empty-icon">
+                    😴
+                </div>
+
+                <strong>
+                    Nenhum treino programado para hoje.
+                </strong>
+
+                <p>
+                    Aproveite para descansar ou programe um treino para este dia.
+                </p>
+
+            </div>
+
+        `;
+
+        return;
+
+    }
+
+
+    container.innerHTML =
+        todayWorkouts
+            .map(workout => {
+
+                const days =
+                    Array.isArray(
+                        workout.days
+                    )
+                        ? workout.days
+                        : [];
+
+
+                const muscles =
+                    [
+                        ...new Set(
+                            workout.exercises
+                                .map(
+                                    exercise =>
+                                        exercise.muscle
+                                )
+                        )
+                    ]
+                    .slice(0, 4)
+                    .join(" • ");
+
+
+                return `
+
+                    <div class="today-workout-card">
+
+                        <div class="today-workout-main">
+
+                            <div class="today-workout-icon">
+                                🏋
+                            </div>
+
+
+                            <div class="today-workout-info">
+
+                                <span class="section-label">
+                                    ${getTodayName()}
+                                </span>
+
+                                <h3>
+                                    ${escapeHTML(
+                                        workout.name
+                                    )}
+                                </h3>
+
+                                <p>
+                                    ${
+                                        muscles ||
+                                        "Treino personalizado"
+                                    }
+                                </p>
+
+
+                                <div class="today-workout-days">
+
+                                    ${days
+                                        .sort(
+                                            (a, b) =>
+                                                getDayOrder(a) -
+                                                getDayOrder(b)
+                                        )
+                                        .map(
+                                            day => `
+                                                <span>
+                                                    ${WEEKDAYS[day]}
+                                                </span>
+                                            `
+                                        )
+                                        .join("")}
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                        <button
+                            class="primary-btn"
+                            onclick="startWorkout(${workout.id})"
+                        >
+                            INICIAR →
+                        </button>
+
+                    </div>
+
+                `;
+
+            })
+            .join("");
+
+}
+
 
 /* ================= START WORKOUT ================= */
 
@@ -1258,7 +2030,8 @@ function startWorkout(id) {
 
     const workout =
         data.workouts.find(
-            item => item.id === id
+            item =>
+                item.id === id
         );
 
 
@@ -1267,16 +2040,23 @@ function startWorkout(id) {
 
     activeWorkout = {
 
-        workoutId: workout.id,
+        workoutId:
+            workout.id,
 
-        name: workout.name,
+        name:
+            workout.name,
 
         exercises:
             workout.exercises.map(
                 exercise => ({
+
                     ...exercise,
-                    weight: 0,
-                    reps: 0
+
+                    sets:
+                        createTrainingSets(
+                            exercise.sets
+                        )
+
                 })
             )
 
@@ -1285,20 +2065,84 @@ function startWorkout(id) {
 
     renderTraining();
 
+
     document
-        .getElementById("trainingModal")
+        .getElementById(
+            "trainingModal"
+        )
         .classList.add("show");
 
 }
 
 
+/* ================= CREATE SETS ================= */
+
+function createTrainingSets(setCount) {
+
+    const count =
+        normalizeSetCount(
+            setCount
+        );
+
+
+    return Array.from(
+        {
+            length: count
+        },
+        () => ({
+
+            weight: 0,
+
+            reps: 0
+
+        })
+    );
+
+}
+
+
+function normalizeSetCount(setCount) {
+
+    let count =
+        Number(setCount);
+
+
+    if (
+        !count ||
+        count < MIN_SETS ||
+        count > MAX_SETS
+    ) {
+
+        count =
+            DEFAULT_SETS;
+
+    }
+
+
+    return Math.min(
+        MAX_SETS,
+        Math.max(
+            MIN_SETS,
+            Math.floor(count)
+        )
+    );
+
+}
+
+
+/* ================= CLOSE TRAINING ================= */
+
 function closeTrainingModal() {
 
     document
-        .getElementById("trainingModal")
+        .getElementById(
+            "trainingModal"
+        )
         .classList.remove("show");
 
-    activeWorkout = null;
+
+    activeWorkout =
+        null;
 
 }
 
@@ -1307,17 +2151,23 @@ function closeTrainingModal() {
 
 function renderTraining() {
 
-    if (!activeWorkout) return;
+    if (!activeWorkout) {
+        return;
+    }
 
 
     document
-        .getElementById("trainingTitle")
+        .getElementById(
+            "trainingTitle"
+        )
         .textContent =
         activeWorkout.name.toUpperCase();
 
 
     document
-        .getElementById("trainingExerciseCount")
+        .getElementById(
+            "trainingExerciseCount"
+        )
         .textContent =
         activeWorkout.exercises.length;
 
@@ -1330,200 +2180,295 @@ function renderTraining() {
 
     container.innerHTML =
         activeWorkout.exercises
-            .map((exercise, index) => `
+            .map(
+                (exercise, exerciseIndex) => {
 
-                <div class="training-exercise">
+                    return `
 
-                    <div class="training-exercise-header">
+                        <div class="training-exercise">
 
-                        <div>
+                            <div class="training-exercise-header">
 
-                            <span>
-                                ${escapeHTML(exercise.muscle)}
-                            </span>
+                                <div>
 
-                            <h3>
-                                ${escapeHTML(exercise.name)}
-                            </h3>
+                                    <span>
+                                        ${escapeHTML(
+                                            exercise.muscle
+                                        )}
+                                    </span>
 
-                        </div>
+                                    <h3>
+                                        ${escapeHTML(
+                                            exercise.name
+                                        )}
+                                    </h3>
 
-                    </div>
+                                </div>
 
-
-                    <div class="training-inputs">
-
-
-                        <!-- PESO -->
-
-                        <div>
-
-                            <label class="form-group">
-
-                                <span
-                                    style="
-                                        display:block;
-                                        margin-bottom:7px;
-                                        color:#aaa5b8;
-                                        font-size:9px;
-                                        font-weight:900;
-                                    "
-                                >
-                                    PESO — KG
+                                <span>
+                                    ${
+                                        exercise.sets.length
+                                    }/${
+                                        MAX_SETS
+                                    } SÉRIES
                                 </span>
 
-                            </label>
+                            </div>
 
 
-                            <div class="number-control">
+                            <div class="sets-container">
 
-                                <button
-                                    onclick="changeNumber(
-                                        'weight-${index}',
-                                        -1
-                                    )"
+                                ${
+                                    exercise.sets
+                                        .map(
+                                            (set, setIndex) => `
+
+                                                <div class="set-row">
+
+                                                    <div class="set-number">
+                                                        ${setIndex + 1}
+                                                    </div>
+
+
+                                                    <!-- PESO -->
+
+                                                    <div class="set-input-group">
+
+                                                        <label
+                                                            class="set-input-label"
+                                                        >
+                                                            PESO — KG
+                                                        </label>
+
+                                                        <input
+                                                            class="set-input"
+                                                            type="number"
+                                                            min="0"
+                                                            step="0.5"
+                                                            value="${
+                                                                set.weight
+                                                            }"
+                                                            id="weight-${exerciseIndex}-${setIndex}"
+                                                            oninput="
+                                                                updateSetInput(
+                                                                    ${exerciseIndex},
+                                                                    ${setIndex},
+                                                                    'weight',
+                                                                    this.value
+                                                                )
+                                                            "
+                                                        >
+
+                                                    </div>
+
+
+                                                    <!-- REPS -->
+
+                                                    <div class="set-input-group">
+
+                                                        <label
+                                                            class="set-input-label"
+                                                        >
+                                                            REPS — MÁX. 15
+                                                        </label>
+
+                                                        <input
+                                                            class="set-input"
+                                                            type="number"
+                                                            min="0"
+                                                            max="15"
+                                                            step="1"
+                                                            value="${
+                                                                set.reps
+                                                            }"
+                                                            id="reps-${exerciseIndex}-${setIndex}"
+                                                            inputmode="numeric"
+                                                            oninput="
+                                                                updateSetInput(
+                                                                    ${exerciseIndex},
+                                                                    ${setIndex},
+                                                                    'reps',
+                                                                    this.value
+                                                                )
+                                                            "
+                                                        >
+
+                                                    </div>
+
+
+                                                    <!-- REMOVE -->
+
+                                                    <button
+                                                        class="remove-set-btn"
+                                                        onclick="
+                                                            removeSet(
+                                                                ${exerciseIndex},
+                                                                ${setIndex}
+                                                            )
+                                                        "
+                                                        title="Remover série"
+                                                    >
+                                                        ×
+                                                    </button>
+
+                                                </div>
+
+
+                                                <div
+                                                    id="rep-message-${exerciseIndex}-${setIndex}"
+                                                    class="rep-recommendation"
+                                                ></div>
+
+                                            `
+                                        )
+                                        .join("")
+                                }
+
+
+                                ${
+                                    exercise.sets.length <
+                                    MAX_SETS
+                                        ? `
+
+                                            <button
+                                                class="add-set-btn"
+                                                onclick="
+                                                    addSet(
+                                                        ${exerciseIndex}
+                                                    )
+                                                "
+                                            >
+                                                + ADICIONAR SÉRIE
+                                            </button>
+
+                                        `
+                                        : `
+
+                                            <div class="sets-limit-message">
+                                                LIMITE DE 4 SÉRIES ATINGIDO
+                                            </div>
+
+                                        `
+                                }
+
+
+                                <div
+                                    class="exercise-volume"
+                                    id="exercise-volume-${exerciseIndex}"
                                 >
-                                    −
-                                </button>
-
-                                <input
-                                    type="number"
-                                    min="0"
-                                    step="0.5"
-                                    value="0"
-                                    id="weight-${index}"
-                                    oninput="updateTrainingVolume()"
-                                >
-
-                                <button
-                                    onclick="changeNumber(
-                                        'weight-${index}',
-                                        1
-                                    )"
-                                >
-                                    +
-                                </button>
+                                    Volume:
+                                    <strong>0 kg</strong>
+                                </div>
 
                             </div>
 
                         </div>
 
+                    `;
 
-                        <!-- REPS -->
-
-                        <div>
-
-                            <label
-                                style="
-                                    display:block;
-                                    margin-bottom:7px;
-                                    color:#aaa5b8;
-                                    font-size:9px;
-                                    font-weight:900;
-                                "
-                            >
-                                REPETIÇÕES — MÁX. 15
-                            </label>
+                }
+            )
+            .join("");
 
 
-                            <div class="number-control">
-
-                                <button
-                                    onclick="changeNumber(
-                                        'reps-${index}',
-                                        -1
-                                    )"
-                                >
-                                    −
-                                </button>
-
-                                <input
-                                    type="number"
-                                    min="0"
-                                    max="15"
-                                    step="1"
-                                    value="0"
-                                    id="reps-${index}"
-                                    inputmode="numeric"
-                                    oninput="handleRepsInput(
-                                        'reps-${index}'
-                                    )"
-                                >
-
-                                <button
-                                    onclick="changeNumber(
-                                        'reps-${index}',
-                                        1
-                                    )"
-                                >
-                                    +
-                                </button>
-
-                            </div>
-
-
-                            <div
-                                id="rep-message-${index}"
-                                class="rep-recommendation"
-                            ></div>
-
-                        </div>
-
-
-                    </div>
-
-                </div>
-
-            `).join("");
-
+    renderAllRepMessages();
 
     updateTrainingVolume();
 
 }
 
 
-/* ================= NUMBER CONTROLS ================= */
+/* ================= UPDATE SET INPUT ================= */
 
-function changeNumber(inputId, amount) {
+function updateSetInput(
+    exerciseIndex,
+    setIndex,
+    type,
+    value
+) {
 
-    const input =
-        document.getElementById(inputId);
-
-
-    if (!input) return;
-
-
-    let value =
-        Number(input.value) || 0;
-
-
-    value += amount;
-
-
-    if (value < 0) {
-        value = 0;
+    if (!activeWorkout) {
+        return;
     }
 
 
-    if (inputId.startsWith("reps-")) {
+    const exercise =
+        activeWorkout.exercises[
+            exerciseIndex
+        ];
 
-        value =
-            Math.min(
-                15,
-                Math.floor(value)
+
+    if (!exercise) {
+        return;
+    }
+
+
+    const set =
+        exercise.sets[
+            setIndex
+        ];
+
+
+    if (!set) {
+        return;
+    }
+
+
+    let numericValue =
+        Number(value) || 0;
+
+
+    if (numericValue < 0) {
+        numericValue = 0;
+    }
+
+
+    if (type === "weight") {
+
+        numericValue =
+            Math.max(
+                0,
+                numericValue
             );
 
     }
 
 
-    input.value = value;
+    if (type === "reps") {
 
-
-    if (inputId.startsWith("reps-")) {
-
-        handleRepsInput(inputId);
+        numericValue =
+            Math.min(
+                MAX_REPS,
+                Math.floor(
+                    numericValue
+                )
+            );
 
     }
+
+
+    set[type] =
+        numericValue;
+
+
+    const input =
+        document.getElementById(
+            `${type}-${exerciseIndex}-${setIndex}`
+        );
+
+
+    if (input) {
+
+        input.value =
+            numericValue;
+
+    }
+
+
+    updateRepMessage(
+        exerciseIndex,
+        setIndex
+    );
 
 
     updateTrainingVolume();
@@ -1531,68 +2476,228 @@ function changeNumber(inputId, amount) {
 }
 
 
-/* ================= REPS ================= */
+/* ================= ADD SET ================= */
 
-function handleRepsInput(inputId) {
+function addSet(exerciseIndex) {
 
-    const input =
-        document.getElementById(inputId);
-
-
-    if (!input) return;
-
-
-    let value =
-        Math.floor(
-            Number(input.value) || 0
-        );
-
-
-    if (value < 0) {
-        value = 0;
+    if (!activeWorkout) {
+        return;
     }
 
 
-    if (value > 15) {
+    const exercise =
+        activeWorkout.exercises[
+            exerciseIndex
+        ];
 
-        value = 15;
+
+    if (!exercise) {
+        return;
+    }
+
+
+    if (
+        exercise.sets.length >=
+        MAX_SETS
+    ) {
+
+        showToast(
+            "Cada exercício pode ter no máximo 4 séries.",
+            "info"
+        );
+
+        return;
 
     }
 
 
-    input.value = value;
+    exercise.sets.push({
+
+        weight: 0,
+
+        reps: 0
+
+    });
 
 
-    const index =
-        inputId.replace(
-            "reps-",
-            ""
+    renderTraining();
+
+}
+
+
+/* ================= REMOVE SET ================= */
+
+function removeSet(
+    exerciseIndex,
+    setIndex
+) {
+
+    if (!activeWorkout) {
+        return;
+    }
+
+
+    const exercise =
+        activeWorkout.exercises[
+            exerciseIndex
+        ];
+
+
+    if (!exercise) {
+        return;
+    }
+
+
+    if (
+        exercise.sets.length <=
+        MIN_SETS
+    ) {
+
+        showToast(
+            "Cada exercício precisa ter pelo menos 1 série.",
+            "info"
         );
+
+        return;
+
+    }
+
+
+    exercise.sets.splice(
+        setIndex,
+        1
+    );
+
+
+    renderTraining();
+
+}
+
+
+/* ================= REP MESSAGE ================= */
+
+function updateRepMessage(
+    exerciseIndex,
+    setIndex
+) {
+
+    const set =
+        activeWorkout
+            ?.exercises?.[
+                exerciseIndex
+            ]?.sets?.[
+                setIndex
+            ];
+
+
+    if (!set) {
+        return;
+    }
 
 
     const message =
         document.getElementById(
-            `rep-message-${index}`
+            `rep-message-${exerciseIndex}-${setIndex}`
         );
 
 
-    if (!message) return;
+    if (!message) {
+        return;
+    }
 
 
-    if (value === 15) {
+    if (
+        Number(set.reps) ===
+        MAX_REPS
+    ) {
 
         message.textContent =
             "🔥 Você chegou ao limite de 15 reps! Considere aumentar o peso.";
 
-        message.classList.add("show");
+        message.classList.add(
+            "show"
+        );
 
     } else {
 
-        message.textContent = "";
+        message.textContent =
+            "";
 
-        message.classList.remove("show");
+        message.classList.remove(
+            "show"
+        );
 
     }
+
+}
+
+
+/* ================= ALL REP MESSAGES ================= */
+
+function renderAllRepMessages() {
+
+    if (!activeWorkout) {
+        return;
+    }
+
+
+    activeWorkout.exercises
+        .forEach(
+            (exercise, exerciseIndex) => {
+
+                exercise.sets
+                    .forEach(
+                        (_, setIndex) => {
+
+                            updateRepMessage(
+                                exerciseIndex,
+                                setIndex
+                            );
+
+                        }
+                    );
+
+            }
+        );
+
+}
+
+
+/* ================= EXERCISE VOLUME ================= */
+
+function calculateExerciseVolume(
+    exercise
+) {
+
+    if (
+        !exercise ||
+        !Array.isArray(
+            exercise.sets
+        )
+    ) {
+
+        return 0;
+
+    }
+
+
+    return exercise.sets.reduce(
+        (total, set) => {
+
+            const weight =
+                Number(set.weight) || 0;
+
+
+            const reps =
+                Number(set.reps) || 0;
+
+
+            return total +
+                weight * reps;
+
+        },
+        0
+    );
 
 }
 
@@ -1601,41 +2706,65 @@ function handleRepsInput(inputId) {
 
 function updateTrainingVolume() {
 
-    if (!activeWorkout) return;
+    if (!activeWorkout) {
+        return;
+    }
 
 
-    let volume = 0;
+    let totalVolume = 0;
 
 
     activeWorkout.exercises
-        .forEach((exercise, index) => {
+        .forEach(
+            (exercise, exerciseIndex) => {
 
-            const weight =
-                Number(
+                const exerciseVolume =
+                    calculateExerciseVolume(
+                        exercise
+                    );
+
+
+                totalVolume +=
+                    exerciseVolume;
+
+
+                const volumeElement =
                     document.getElementById(
-                        `weight-${index}`
-                    )?.value
-                ) || 0;
+                        `exercise-volume-${exerciseIndex}`
+                    );
 
 
-            const reps =
-                Number(
-                    document.getElementById(
-                        `reps-${index}`
-                    )?.value
-                ) || 0;
+                if (volumeElement) {
+
+                    volumeElement.innerHTML = `
+                        Volume:
+                        <strong>
+                            ${formatNumber(
+                                exerciseVolume
+                            )} kg
+                        </strong>
+                    `;
+
+                }
+
+            }
+        );
 
 
-            volume +=
-                weight * reps;
+    const totalElement =
+        document.getElementById(
+            "trainingVolume"
+        );
 
-        });
 
+    if (totalElement) {
 
-    document
-        .getElementById("trainingVolume")
-        .textContent =
-        formatNumber(volume);
+        totalElement.textContent =
+            formatNumber(
+                totalVolume
+            );
+
+    }
 
 }
 
@@ -1644,7 +2773,9 @@ function updateTrainingVolume() {
 
 function finishWorkout() {
 
-    if (!activeWorkout) return;
+    if (!activeWorkout) {
+        return;
+    }
 
 
     let totalVolume = 0;
@@ -1655,75 +2786,90 @@ function finishWorkout() {
 
 
     activeWorkout.exercises =
-        activeWorkout.exercises.map(
-            (exercise, index) => {
+        activeWorkout.exercises
+            .map(exercise => {
 
-                const weightInput =
-                    document.getElementById(
-                        `weight-${index}`
-                    );
+                const cleanSets =
+                    exercise.sets.map(set => {
 
-
-                const repsInput =
-                    document.getElementById(
-                        `reps-${index}`
-                    );
-
-
-                const weight =
-                    Math.max(
-                        0,
-                        Number(
-                            weightInput.value
-                        ) || 0
-                    );
-
-
-                const reps =
-                    Math.min(
-                        15,
-                        Math.max(
-                            0,
-                            Math.floor(
+                        const weight =
+                            Math.max(
+                                0,
                                 Number(
-                                    repsInput.value
+                                    set.weight
                                 ) || 0
-                            )
-                        )
+                            );
+
+
+                        const reps =
+                            Math.min(
+                                MAX_REPS,
+                                Math.max(
+                                    0,
+                                    Math.floor(
+                                        Number(
+                                            set.reps
+                                        ) || 0
+                                    )
+                                )
+                            );
+
+
+                        if (
+                            weight >
+                            maxWeightThisWorkout
+                        ) {
+
+                            maxWeightThisWorkout =
+                                weight;
+
+                        }
+
+
+                        totalVolume +=
+                            weight * reps;
+
+
+                        return {
+
+                            weight,
+
+                            reps
+
+                        };
+
+                    });
+
+
+                const hasCompletedSet =
+                    cleanSets.some(
+                        set =>
+                            set.reps > 0
                     );
 
 
-                if (reps > 0) {
+                if (hasCompletedSet) {
+
                     completedExercises++;
-                }
-
-
-                totalVolume +=
-                    weight * reps;
-
-
-                if (
-                    weight >
-                    maxWeightThisWorkout
-                ) {
-
-                    maxWeightThisWorkout =
-                        weight;
 
                 }
 
 
                 return {
+
                     ...exercise,
-                    weight,
-                    reps
+
+                    sets:
+                        cleanSets
+
                 };
 
-            }
-        );
+            });
 
 
-    if (completedExercises === 0) {
+    if (
+        completedExercises === 0
+    ) {
 
         showToast(
             "Registre pelo menos uma repetição antes de finalizar.",
@@ -1748,7 +2894,8 @@ function finishWorkout() {
 
     const historyItem = {
 
-        id: Date.now(),
+        id:
+            Date.now(),
 
         workoutId:
             activeWorkout.workoutId,
@@ -1776,7 +2923,9 @@ function finishWorkout() {
     );
 
 
-    addXP(xpEarned);
+    addXP(
+        xpEarned
+    );
 
 
     if (
@@ -1856,11 +3005,15 @@ function renderLastWorkout() {
                     </span>
 
                     <h3>
-                        ${escapeHTML(workout.name)}
+                        ${escapeHTML(
+                            workout.name
+                        )}
                     </h3>
 
                     <p>
-                        ${formatDate(workout.date)}
+                        ${formatDate(
+                            workout.date
+                        )}
                     </p>
 
                 </div>
@@ -1880,7 +3033,9 @@ function renderLastWorkout() {
                 </small>
 
                 <strong>
-                    ${formatNumber(workout.volume)} kg
+                    ${formatNumber(
+                        workout.volume
+                    )} kg
                 </strong>
 
             </div>
@@ -1926,76 +3081,84 @@ function renderHistory() {
 
 
     container.innerHTML =
-        data.history.map(item => `
+        data.history
+            .map(item => `
 
-            <div class="history-item">
+                <div class="history-item">
 
-                <div class="history-main">
+                    <div class="history-main">
 
-                    <div class="history-icon">
-                        🏋
+                        <div class="history-icon">
+                            🏋
+                        </div>
+
+                        <div>
+
+                            <h3>
+                                ${escapeHTML(
+                                    item.name
+                                )}
+                            </h3>
+
+                            <p>
+                                ${formatDate(
+                                    item.date
+                                )}
+                            </p>
+
+                        </div>
+
                     </div>
 
-                    <div>
 
-                        <h3>
-                            ${escapeHTML(item.name)}
-                        </h3>
+                    <div class="history-stats">
 
-                        <p>
-                            ${formatDate(item.date)}
-                        </p>
+                        <div class="history-stat">
+
+                            <span>
+                                EXERCÍCIOS
+                            </span>
+
+                            <strong>
+                                ${item.exercises.length}
+                            </strong>
+
+                        </div>
+
+
+                        <div class="history-stat">
+
+                            <span>
+                                VOLUME
+                            </span>
+
+                            <strong>
+                                ${formatNumber(
+                                    item.volume
+                                )} kg
+                            </strong>
+
+                        </div>
+
+
+                        <div class="history-stat">
+
+                            <span>
+                                XP
+                            </span>
+
+                            <strong style="color:#F49D37;">
+                                +${item.xp}
+                            </strong>
+
+                        </div>
 
                     </div>
 
                 </div>
 
-
-                <div class="history-stats">
-
-                    <div class="history-stat">
-
-                        <span>
-                            EXERCÍCIOS
-                        </span>
-
-                        <strong>
-                            ${item.exercises.length}
-                        </strong>
-
-                    </div>
-
-
-                    <div class="history-stat">
-
-                        <span>
-                            VOLUME
-                        </span>
-
-                        <strong>
-                            ${formatNumber(item.volume)} kg
-                        </strong>
-
-                    </div>
-
-
-                    <div class="history-stat">
-
-                        <span>
-                            XP
-                        </span>
-
-                        <strong style="color:#F49D37;">
-                            +${item.xp}
-                        </strong>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        `).join("");
+            `)
+            .join("");
 
 }
 
@@ -2010,13 +3173,17 @@ function renderProfile() {
 
 
     document
-        .getElementById("profileName")
+        .getElementById(
+            "profileName"
+        )
         .textContent =
         name;
 
 
     document
-        .getElementById("profileAvatar")
+        .getElementById(
+            "profileAvatar"
+        )
         .textContent =
         name
             .charAt(0)
@@ -2024,13 +3191,17 @@ function renderProfile() {
 
 
     document
-        .getElementById("profileNameInput")
+        .getElementById(
+            "profileNameInput"
+        )
         .value =
         data.user.name || "";
 
 
     document
-        .getElementById("profileAgeInput")
+        .getElementById(
+            "profileAgeInput"
+        )
         .value =
         data.user.age || "";
 
@@ -2041,7 +3212,9 @@ function saveProfile() {
 
     const name =
         document
-            .getElementById("profileNameInput")
+            .getElementById(
+                "profileNameInput"
+            )
             .value
             .trim();
 
@@ -2049,7 +3222,9 @@ function saveProfile() {
     const age =
         Number(
             document
-                .getElementById("profileAgeInput")
+                .getElementById(
+                    "profileAgeInput"
+                )
                 .value
         );
 
@@ -2066,7 +3241,11 @@ function saveProfile() {
     }
 
 
-    if (!age || age < 10 || age > 100) {
+    if (
+        !age ||
+        age < 10 ||
+        age > 100
+    ) {
 
         showToast(
             "Digite uma idade válida.",
@@ -2078,9 +3257,12 @@ function saveProfile() {
     }
 
 
-    data.user.name = name;
+    data.user.name =
+        name;
 
-    data.user.age = age;
+
+    data.user.age =
+        age;
 
 
     saveData();
@@ -2104,6 +3286,8 @@ function updateAll() {
 
     renderWorkouts();
 
+    renderTodayWorkouts();
+
     renderHistory();
 
     renderProfile();
@@ -2116,9 +3300,12 @@ function updateAll() {
 function formatNumber(number) {
 
     return Number(number || 0)
-        .toLocaleString("pt-BR", {
-            maximumFractionDigits: 1
-        });
+        .toLocaleString(
+            "pt-BR",
+            {
+                maximumFractionDigits: 1
+            }
+        );
 
 }
 
@@ -2153,11 +3340,26 @@ function formatDate(dateString) {
 function escapeHTML(value) {
 
     return String(value)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+        .replace(
+            /</g,
+            "&lt;"
+        )
+        .replace(
+            />/g,
+            "&gt;"
+        )
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+        .replace(
+            /'/g,
+            "&#039;"
+        );
 
 }
 
@@ -2168,31 +3370,64 @@ document.addEventListener(
     "keydown",
     event => {
 
-        if (event.key === "Escape") {
+        if (
+            event.key ===
+            "Escape"
+        ) {
 
             document
-                .querySelectorAll(".modal.show")
+                .querySelectorAll(
+                    ".modal.show"
+                )
                 .forEach(modal => {
 
-                    modal.classList.remove("show");
+                    modal.classList.remove(
+                        "show"
+                    );
 
                 });
 
-            confirmCallback = null;
+
+            confirmCallback =
+                null;
 
         }
 
     }
 );
 
-if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./sw.js")
-            .then(() => {
-                console.log("GYM APP: modo aplicativo ativado!");
-            })
-            .catch(error => {
-                console.error("Erro ao registrar o Service Worker:", error);
-            });
-    });
+
+/* ================= SERVICE WORKER ================= */
+
+if (
+    "serviceWorker" in navigator
+) {
+
+    window.addEventListener(
+        "load",
+        () => {
+
+            navigator.serviceWorker
+                .register("./sw.js")
+
+                .then(() => {
+
+                    console.log(
+                        "GYM APP: modo aplicativo ativado!"
+                    );
+
+                })
+
+                .catch(error => {
+
+                    console.error(
+                        "Erro ao registrar o Service Worker:",
+                        error
+                    );
+
+                });
+
+        }
+    );
+
 }

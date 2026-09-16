@@ -815,6 +815,287 @@ select option {
     color: white;
 }
 
+/* ================= WORKOUT DAYS ================= */
+
+.workout-days-box {
+    margin-top: 25px;
+
+    padding: 18px;
+
+    background: #100d22;
+
+    border: 1px solid var(--border);
+    border-radius: 10px;
+}
+
+.workout-days-box .selector-header {
+    margin: 0 0 15px;
+}
+
+.weekday-selector {
+    display: grid;
+
+    grid-template-columns:
+        repeat(7, 1fr);
+
+    gap: 7px;
+}
+
+.weekday-option {
+    position: relative;
+}
+
+.weekday-option input {
+    position: absolute;
+
+    opacity: 0;
+
+    pointer-events: none;
+}
+
+.weekday-option span {
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    min-height: 42px;
+
+    padding: 8px 5px;
+
+    background: #211a3b;
+
+    border: 1px solid transparent;
+
+    border-radius: 8px;
+
+    color: var(--gray);
+
+    font-size: 9px;
+
+    font-weight: 900;
+
+    cursor: pointer;
+
+    transition: 0.2s;
+}
+
+.weekday-option span:hover {
+    background: #292144;
+
+    color: white;
+}
+
+.weekday-option input:checked + span {
+    background: rgba(215, 38, 56, 0.14);
+
+    border-color: var(--red);
+
+    color: white;
+
+    box-shadow:
+        0 0 0 1px
+        rgba(215, 38, 56, 0.08);
+}
+
+.workout-days-help {
+    margin-top: 10px;
+
+    color: var(--dark-gray);
+
+    font-size: 9px;
+
+    line-height: 1.4;
+}
+
+
+/* ================= TODAY WORKOUT ================= */
+
+.today-workout-section {
+    margin-bottom: 35px;
+}
+
+.today-workout-list {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 10px;
+}
+
+.today-workout-card {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 20px;
+
+    padding: 20px;
+
+    background:
+        linear-gradient(
+            135deg,
+            rgba(215, 38, 56, 0.10),
+            rgba(63, 136, 197, 0.06)
+        );
+
+    border: 1px solid
+        rgba(215, 38, 56, 0.18);
+
+    border-radius: 12px;
+
+    transition: 0.2s;
+}
+
+.today-workout-card:hover {
+    transform: translateY(-2px);
+
+    border-color:
+        rgba(215, 38, 56, 0.35);
+}
+
+.today-workout-main {
+    display: flex;
+
+    align-items: center;
+
+    gap: 15px;
+
+    min-width: 0;
+}
+
+.today-workout-icon {
+    width: 48px;
+    height: 48px;
+
+    flex-shrink: 0;
+
+    display: grid;
+
+    place-items: center;
+
+    background: #211a3d;
+
+    border-radius: 10px;
+
+    font-size: 21px;
+}
+
+.today-workout-info {
+    min-width: 0;
+}
+
+.today-workout-info .section-label {
+    margin-bottom: 3px;
+}
+
+.today-workout-info h3 {
+    font-size: 18px;
+
+    font-weight: 900;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+}
+
+.today-workout-info p {
+    margin-top: 3px;
+
+    color: var(--gray);
+
+    font-size: 10px;
+}
+
+.today-workout-days {
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 5px;
+
+    margin-top: 7px;
+}
+
+.today-workout-days span {
+    padding: 4px 7px;
+
+    background: #211a3a;
+
+    border-radius: 5px;
+
+    color: var(--dark-gray);
+
+    font-size: 8px;
+
+    font-weight: 900;
+}
+
+.today-empty {
+    padding: 25px;
+
+    background: var(--card);
+
+    border: 1px dashed var(--border);
+
+    border-radius: 12px;
+
+    text-align: center;
+}
+
+.today-empty-icon {
+    margin-bottom: 8px;
+
+    font-size: 25px;
+}
+
+.today-empty strong {
+    display: block;
+
+    margin-bottom: 4px;
+
+    font-size: 14px;
+}
+
+.today-empty p {
+    color: var(--gray);
+
+    font-size: 10px;
+}
+
+
+/* ================= WORKOUT SCHEDULE BADGE ================= */
+
+.workout-schedule {
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 5px;
+
+    margin-bottom: 15px;
+}
+
+.workout-schedule span {
+    padding: 5px 7px;
+
+    background: rgba(63, 136, 197, 0.10);
+
+    border: 1px solid
+        rgba(63, 136, 197, 0.15);
+
+    border-radius: 5px;
+
+    color: var(--blue);
+
+    font-size: 8px;
+
+    font-weight: 900;
+}
 
 /* ================= CUSTOM EXERCISE ================= */
 
@@ -988,6 +1269,180 @@ select option {
     display: block;
 }
 
+/* ================= SETS ================= */
+
+.sets-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.set-row {
+    display: grid;
+    grid-template-columns: 45px 1fr 1fr 40px;
+    gap: 8px;
+    align-items: center;
+}
+
+.set-number {
+    height: 43px;
+
+    display: grid;
+    place-items: center;
+
+    background: #2a2245;
+
+    border-radius: 8px;
+
+    color: var(--orange);
+
+    font-size: 11px;
+    font-weight: 900;
+}
+
+.set-input-group {
+    min-width: 0;
+}
+
+.set-input-label {
+    display: block;
+
+    margin-bottom: 5px;
+
+    color: var(--dark-gray);
+
+    font-size: 8px;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+}
+
+.set-input {
+    width: 100%;
+
+    height: 43px;
+
+    padding: 10px;
+
+    background: #0f0c20;
+
+    border: 1px solid var(--border);
+    border-radius: 8px;
+
+    color: white;
+
+    text-align: center;
+
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.set-input:focus {
+    border-color: var(--blue);
+}
+
+.set-input::-webkit-inner-spin-button,
+.set-input::-webkit-outer-spin-button {
+    appearance: none;
+    margin: 0;
+}
+
+.remove-set-btn {
+    width: 40px;
+    height: 43px;
+
+    border: none;
+    border-radius: 8px;
+
+    background: #251e3e;
+
+    color: var(--gray);
+
+    font-size: 17px;
+    font-weight: 900;
+}
+
+.remove-set-btn:hover {
+    background: rgba(215, 38, 56, 0.15);
+    color: var(--red);
+}
+
+.add-set-btn {
+    width: 100%;
+
+    margin-top: 4px;
+
+    padding: 10px;
+
+    border: 1px dashed rgba(63, 136, 197, 0.35);
+    border-radius: 8px;
+
+    background: rgba(63, 136, 197, 0.06);
+
+    color: var(--blue);
+
+    font-size: 9px;
+    font-weight: 900;
+
+    transition: 0.2s;
+}
+
+.add-set-btn:hover {
+    background: rgba(63, 136, 197, 0.12);
+    border-color: var(--blue);
+}
+
+.sets-limit-message {
+    margin-top: 5px;
+
+    color: var(--orange);
+
+    font-size: 9px;
+    font-weight: 800;
+
+    text-align: center;
+}
+
+.exercise-volume {
+    margin-top: 10px;
+
+    padding-top: 9px;
+
+    border-top: 1px solid var(--border);
+
+    color: var(--gray);
+
+    font-size: 9px;
+    font-weight: 800;
+}
+
+.exercise-volume strong {
+    color: white;
+}
+
+
+/* ================= SET RESPONSIVE ================= */
+
+@media (max-width: 650px) {
+
+    .set-row {
+        grid-template-columns: 38px 1fr 1fr 36px;
+        gap: 6px;
+    }
+
+    .set-number,
+    .remove-set-btn {
+        height: 40px;
+    }
+
+    .set-input {
+        height: 40px;
+
+        padding: 8px 5px;
+
+        font-size: 12px;
+    }
+
+}
 
 /* ================= HISTORY ================= */
 
@@ -1298,6 +1753,21 @@ select option {
 
 
 @media (max-width: 650px) {
+
+        .weekday-selector {
+        grid-template-columns:
+            repeat(4, 1fr);
+    }
+
+    .today-workout-card {
+        align-items: flex-start;
+
+        flex-direction: column;
+    }
+
+    .today-workout-card .primary-btn {
+        width: 100%;
+    }
 
     .header {
         height: auto;
